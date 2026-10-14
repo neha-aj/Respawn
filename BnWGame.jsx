@@ -1092,7 +1092,7 @@ const CSS = `
 .bnw-root *{box-sizing:border-box}
 .bnw-top{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:16px;min-height:72px;padding:8px 20px;border-bottom:1px solid var(--line);background:#050505;z-index:2}
 .bnw-brand{display:flex;align-items:baseline;gap:14px;font-family:${FONT};white-space:nowrap;overflow:hidden}
-.bnw-logo{font-size:34px;letter-spacing:.04em}.bnw-logo .w{color:transparent;-webkit-text-stroke:1px var(--ink)}
+.bnw-logo{font-size:34px;letter-spacing:.04em}.bnw-logo small,.bnw-big .n{font-family:'IM Fell English',Georgia,serif}.bnw-logo .w{color:transparent;-webkit-text-stroke:1px var(--ink)}
 .bnw-lv{font-size:14px;letter-spacing:.3em;color:var(--dim)}
 .bnw-timer{display:flex;flex-direction:column;align-items:center;min-width:220px}
 .bnw-clock{font-family:${FONT};font-size:44px;line-height:1;letter-spacing:.06em;font-variant-numeric:tabular-nums;transition:color .3s}
@@ -1143,9 +1143,6 @@ const SpeakerIcon = ({ muted }) => (
 /* =============================================================================
    COMPONENT
    ============================================================================= */
-const UNLOCK_KEY = 'bnw-unlocked';
-const readUnlocked = () => { try { return Math.max(1, Math.min(LEVELS.length, parseInt(localStorage.getItem(UNLOCK_KEY), 10) || 1)); } catch (_) { return 1; } };
-const saveUnlocked = (n) => { try { localStorage.setItem(UNLOCK_KEY, String(n)); } catch (_) { /* storage unavailable */ } };
 
 export default function BnWGame({ timeLimit = 120, onLevelComplete, onGameComplete, onExit }) {
   const stageRef = useRef(null);
@@ -1157,7 +1154,8 @@ export default function BnWGame({ timeLimit = 120, onLevelComplete, onGameComple
 
   const [phase, setPhase] = useState('menu');      // menu | play | won | victory | lost | bye
   const [levelIdx, setLevelIdx] = useState(0);
-  const [unlocked, setUnlocked] = useState(readUnlocked);
+  // Progress lives only for this run: a fresh game always begins at Level 1, and once Level 1 is solved it stays solved.
+  const [unlocked, setUnlocked] = useState(1);
   const timesRef = useRef([]);
   const [time, setTime] = useState(timeLimit);
   const [muted, setMuted] = useState(false);
@@ -1185,7 +1183,7 @@ export default function BnWGame({ timeLimit = 120, onLevelComplete, onGameComple
           timesRef.current[idx] = st.time;
           if (cbRef.current.onLevelComplete) cbRef.current.onLevelComplete(st);
           if (idx + 1 < LEVELS.length) {
-            setUnlocked((u) => { const n = Math.max(u, idx + 2); saveUnlocked(n); return n; });
+            setUnlocked((u) => Math.max(u, idx + 2));
           } else {
             p = 'victory';
             if (cbRef.current.onGameComplete) cbRef.current.onGameComplete({ times: timesRef.current.slice() });
@@ -1226,6 +1224,7 @@ export default function BnWGame({ timeLimit = 120, onLevelComplete, onGameComple
     setRulesOpen(false); setStats(null); setLevelIdx(idx);
     engineRef.current && engineRef.current.start(idx);
   };
+  const newRun = () => { setUnlocked(1); start(0); };
   const resetLevel = () => engineRef.current && engineRef.current.resetPosition();
   const exit = () => {
     setRulesOpen(false);
@@ -1271,8 +1270,9 @@ export default function BnWGame({ timeLimit = 120, onLevelComplete, onGameComple
               <div className="bnw-big">B<span className="n">n</span><span className="w">W</span></div>
               <div className="bnw-sub">{LEVELS.length} LEVELS</div>
               <div className="bnw-line">You are Thanos. Escape the mate. Two minutes per board.</div>
-              <button className="bnw-btn" onClick={() => start(0)}>Start</button>
-              {unlocked >= 2 && <button className="bnw-btn" onClick={() => start(1)}>Level 2</button>}
+              {unlocked >= 2
+                ? <button className="bnw-btn" onClick={() => start(1)}>Continue · Level 2</button>
+                : <button className="bnw-btn" onClick={() => start(0)}>Start</button>}
               <button className="bnw-btn" onClick={() => setRulesOpen(true)}>Rules</button>
               <button className="bnw-btn" onClick={exit}>Exit</button>
             </div>
@@ -1296,7 +1296,7 @@ export default function BnWGame({ timeLimit = 120, onLevelComplete, onGameComple
               <div className="bnw-sub" style={{ fontSize: 15 }}>
                 {LEVELS.map((l, i) => (timesRef.current[i] != null ? `LEVEL ${l.number} · ${fmt(timesRef.current[i])}` : null)).filter(Boolean).join('   ·   ')}
               </div>
-              <button className="bnw-btn" onClick={() => start(0)} autoFocus>Play Again</button>
+              <button className="bnw-btn" onClick={newRun} autoFocus>Play Again</button>
               <button className="bnw-btn" onClick={exit}>Menu</button>
             </div>
           )}

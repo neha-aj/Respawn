@@ -1,0 +1,133 @@
+/* RESPAWN shell: layers, bottom to top
+ *   .level   the running level (iframe, full screen)
+ *   .shield  over a won level: blocks its buttons, carries the continue prompt
+ *   .iris    the circle wipe
+ *   .video-layer, .card   full-screen black scenes between levels
+ *   .bloom   the colour wash as a new level opens
+ */
+html, body, #root { height: 100%; margin: 0; }
+body { background: #000; color: #fff; overflow: hidden; font-family: 'Press Start 2P', 'Courier New', monospace; }
+* { box-sizing: border-box; }
+kbd {
+  display: inline-block; padding: 4px 6px 3px; margin: 0 2px; border: 1px solid currentColor; border-bottom-width: 3px;
+  border-radius: 3px; font: inherit; font-size: 0.85em; line-height: 1;
+}
+
+.stage { position: fixed; inset: 0; background: #000; }
+.level { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; background: #000; }
+
+/* ---------- victory hold ---------- */
+.shield { position: absolute; inset: 0; z-index: 10; cursor: pointer; outline: none; }
+.continue {
+  position: absolute; left: 50%; bottom: 5vh; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  padding: 12px 18px 12px; background: rgba(0, 0, 0, 0.62); border: 1px solid color-mix(in srgb, var(--c) 55%, transparent);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--c) 35%, transparent);
+  color: #fff; font-size: 11px; letter-spacing: 0.18em;
+  opacity: 0; animation: rise 500ms ease-out 1200ms forwards;
+}
+.continue-label { animation: breathe 1.6s ease-in-out 1700ms infinite; }
+.continue-bar { width: 170px; height: 2px; background: rgba(255, 255, 255, 0.15); overflow: hidden; }
+.continue-bar > span {
+  display: block; height: 100%; background: var(--c); box-shadow: 0 0 8px var(--c);
+  transform-origin: left; transform: scaleX(0); animation: run var(--hold) linear forwards;
+}
+@keyframes rise { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translate(-50%, 0); } }
+@keyframes breathe { 50% { opacity: 0.45; } }
+@keyframes run { to { transform: scaleX(1); } }
+
+/* ---------- iris ----------
+ * A transparent circle whose giant box-shadow is the black. Animating its diameter
+ * (--d) opens or closes it; the rim glows in the chapter colour while it moves. */
+.iris {
+  position: absolute; left: 50%; top: 50%; z-index: 20; pointer-events: none;
+  width: var(--d); height: var(--d); transform: translate(-50%, -50%); border-radius: 50%;
+  box-shadow: 0 0 0 300vmax #000;
+  transition: width var(--ms) cubic-bezier(0.65, 0, 0.35, 1), height var(--ms) cubic-bezier(0.65, 0, 0.35, 1);
+}
+.iris.ring {
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--c) 80%, #fff),
+    0 0 26px 6px color-mix(in srgb, var(--c) 55%, transparent),
+    inset 0 0 26px 2px color-mix(in srgb, var(--c) 40%, transparent),
+    0 0 0 300vmax #000;
+}
+
+/* ---------- spectrum card ---------- */
+.card {
+  position: absolute; inset: 0; z-index: 40; background: #000;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7vh;
+  animation: fade-in 300ms ease-out both;
+  transition: opacity 600ms ease-in;
+}
+.card.leaving { opacity: 0; }
+.card-name { display: flex; font-size: clamp(22px, 4.2vw, 52px); letter-spacing: 0.28em; margin-right: -0.28em; color: var(--c); }
+.card-name > span {
+  display: inline-block; opacity: 0;
+  text-shadow: 0 0 14px color-mix(in srgb, var(--c) 70%, transparent), 0 0 34px color-mix(in srgb, var(--c) 35%, transparent);
+  animation: letter-in 520ms cubic-bezier(0.2, 0.8, 0.2, 1) calc(620ms + var(--i) * 55ms) forwards;
+}
+@keyframes letter-in {
+  from { opacity: 0; transform: translateY(0.5em) scale(1.25); filter: blur(6px); }
+  to { opacity: 1; transform: none; filter: blur(0); }
+}
+
+.strip { display: flex; gap: clamp(8px, 1.4vw, 18px); }
+.seg { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.bar { display: block; width: clamp(34px, 6.5vw, 86px); height: 6px; border-radius: 3px; background: #1d1d1d; }
+.letter { font-size: 10px; color: #3a3a3a; }
+.seg.lit .bar { background: var(--c); box-shadow: 0 0 10px color-mix(in srgb, var(--c) 60%, transparent); }
+.seg.lit .letter { color: color-mix(in srgb, var(--c) 75%, #000); }
+.seg.ignite .bar { animation: ignite 1000ms cubic-bezier(0.2, 0.8, 0.2, 1) calc(500ms + var(--i) * 110ms) forwards; }
+.seg.ignite .letter { animation: letter-lit 600ms ease-out calc(560ms + var(--i) * 110ms) forwards; }
+@keyframes ignite {
+  0% { background: #1d1d1d; transform: scaleY(1); box-shadow: none; }
+  14% { background: #fff; transform: scaleY(2.6); box-shadow: 0 0 34px 10px #fff, 0 0 70px 18px var(--c); }
+  100% { background: var(--c); transform: scaleY(1); box-shadow: 0 0 16px 2px color-mix(in srgb, var(--c) 75%, transparent); }
+}
+@keyframes letter-lit { to { color: var(--c); text-shadow: 0 0 8px var(--c); } }
+@keyframes fade-in { from { opacity: 0; } }
+
+/* ---------- video ---------- */
+.video-layer { position: absolute; inset: 0; z-index: 30; background: #000; transition: opacity 450ms ease-in; }
+.video-layer.fading { opacity: 0; }
+.video-layer video {
+  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain;
+  opacity: 0; transform: scale(1.03); transition: opacity 700ms ease-out, transform 2.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.video-layer video.on { opacity: 1; transform: none; }
+.tap-to-play {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); padding: 16px 26px;
+  background: #000; color: var(--c); border: 2px solid var(--c); font: inherit; font-size: 14px; letter-spacing: 0.2em; cursor: pointer;
+  box-shadow: 0 0 22px color-mix(in srgb, var(--c) 50%, transparent); animation: breathe 1.6s ease-in-out infinite;
+}
+.skip {
+  position: absolute; right: 28px; bottom: 26px; display: flex; align-items: center; gap: 12px;
+  font-size: 10px; letter-spacing: 0.15em; color: rgba(255, 255, 255, 0.85);
+  opacity: 0; transition: opacity 400ms ease; pointer-events: none;
+}
+.skip.show { opacity: 1; }
+.skip-ring { width: 26px; height: 26px; transform: rotate(-90deg); }
+.skip-ring circle { fill: none; stroke-width: 3; }
+.skip-ring .track { stroke: rgba(255, 255, 255, 0.2); }
+.skip-ring .fill { stroke: var(--c); stroke-dasharray: 94.25; stroke-linecap: round; }
+
+/* ---------- colour bloom ---------- */
+.bloom {
+  position: absolute; left: 50%; top: 50%; z-index: 50; pointer-events: none;
+  width: 120vmax; height: 120vmax; margin: -60vmax 0 0 -60vmax; border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--c) 85%, #fff) 0%, color-mix(in srgb, var(--c) 45%, transparent) 30%, transparent 62%);
+  mix-blend-mode: screen; opacity: 0;
+  animation: bloom 1300ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+@keyframes bloom {
+  0% { opacity: 0; transform: scale(0.1); }
+  25% { opacity: 0.85; }
+  100% { opacity: 0; transform: scale(1.6); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .iris { transition-duration: 1ms; }
+  .bloom { display: none; }
+  .card-name > span { animation-duration: 1ms; }
+}

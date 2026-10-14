@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root { height: 100%; }
+body { margin: 0; background: #08001A; color: #E8E0FF; overflow: hidden; font-family: 'Exo 2', 'Agency FB', Bahnschrift, sans-serif; }
+::selection { background: #6C2DC7; color: #E8E0FF; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

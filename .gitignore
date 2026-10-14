@@ -2,3 +2,5 @@
 BnW_Level1.html
 _test_*.html
 __pycache__/
+.vite/
+~$*
